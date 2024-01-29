@@ -27,6 +27,7 @@ public class SmartTriggerApp implements Runnable {
 	public void init() {
 		// Load the map with all the triggers
 		ServiceLoader<SmartTrigger> triggerLoader =  ServiceLoader.load(SmartTrigger.class);
+		triggerLoader.findFirst().orElseThrow();
 		triggers = new ConcurrentHashMap<>();
 		triggerLoader.forEach((t) -> triggers.put(t.getId(), t));
 		
