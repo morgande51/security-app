@@ -24,6 +24,7 @@ public abstract class AbstractTrigger implements SmartTrigger {
 	@Override
 	public void init(ScheduledFuture<?> resetTask) {
 		this.resetTask = resetTask;
+		setState(RUNNING);
 	}
 
 	@Override
