@@ -2,6 +2,8 @@ package com.nge.smarttrigger.spi;
 
 import static com.nge.smarttrigger.spi.SmartTriggerStateType.*;
 
+import java.util.Optional;
+import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.ScheduledFuture;
 
@@ -14,6 +16,7 @@ public abstract class AbstractTrigger implements SmartTrigger {
 	private String name;
 	private SmartTriggerStateType state;
 	private ScheduledFuture<?> resetTask;
+	private Properties configuration;
 	
 	public AbstractTrigger(String name) {
 		this.name = name;
@@ -21,9 +24,18 @@ public abstract class AbstractTrigger implements SmartTrigger {
 	}
 	
 	@Override
-	public void init(ScheduledFuture<?> resetTask) {
+	public void init(ScheduledFuture<?> resetTask, Optional<Properties> config) {
 		this.resetTask = resetTask;
-		setState(RUNNING);
+		
+		SmartTriggerStateType initalState;
+		if (config.isEmpty()) {
+			initalState = ERROR;
+		}
+		else {
+			configuration = config.get();
+			initalState = RUNNING;
+		}
+		setState(initalState);
 	}
 
 	@Override
@@ -51,7 +63,17 @@ public abstract class AbstractTrigger implements SmartTrigger {
 	
 	@Override
 	public boolean shouldRun() {
-		return getState() !=  REMOVED;
+		boolean run;
+		switch (getState()) {
+			case REMOVED:
+			case ERROR:
+				run = false;
+				break;
+				
+			default:
+				run = true;
+		}
+		return run;
 	}
 
 	@Override
@@ -76,5 +98,15 @@ public abstract class AbstractTrigger implements SmartTrigger {
 	@Override
 	public long getFireInterval() {
 		return DEFAULT_FIRE_INTERVAL;
+	}
+	
+	@Override
+	public Properties getProperties() {
+		return configuration;
+	}
+	
+	@Override
+	public void updateProperty(String name, String value) {
+		configuration.put(name, value);
 	}
 }

@@ -1,5 +1,7 @@
 package com.nge.smarttrigger.spi;
 
+import java.util.Optional;
+import java.util.Properties;
 import java.util.concurrent.ScheduledFuture;
 
 public interface SmartTrigger {
@@ -12,7 +14,11 @@ public interface SmartTrigger {
 	
 	public void fire() throws SmartTriggerException;
 
-	public void init(ScheduledFuture<?> resetTask);
+	public void init(ScheduledFuture<?> resetTask, Optional<Properties> properties);
+	
+	public Properties getProperties();
+	
+	public void updateProperty(String name, String value);
 	
 	public SmartTriggerStateType getState();
 	
