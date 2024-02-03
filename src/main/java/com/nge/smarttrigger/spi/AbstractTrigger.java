@@ -1,7 +1,6 @@
 package com.nge.smarttrigger.spi;
 
-import static com.nge.smarttrigger.spi.SmartTriggerStateType.PAUSED;
-import static com.nge.smarttrigger.spi.SmartTriggerStateType.RUNNING;
+import static com.nge.smarttrigger.spi.SmartTriggerStateType.*;
 
 import java.util.UUID;
 import java.util.concurrent.ScheduledFuture;
@@ -43,6 +42,16 @@ public abstract class AbstractTrigger implements SmartTrigger {
 			System.out.println("The trigger is being reset");
 			setState(RUNNING);
 		}
+	}
+	
+	@Override
+	public boolean isReady() {
+		return getState() == RUNNING;
+	}
+	
+	@Override
+	public boolean shouldRun() {
+		return getState() !=  REMOVED;
 	}
 
 	@Override

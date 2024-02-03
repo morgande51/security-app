@@ -15,6 +15,9 @@ import com.nge.smarttrigger.spi.SmartTriggerStateType;
 
 public class SmartTriggerApp implements Runnable {
 	
+	// TODO: this should be configurable
+	public static final int THREAD_POOL_SIZE = 25;
+	
 	private Map<String, SmartTrigger> triggers;
 	private ScheduledExecutorService resetExecutor;
 	private ExecutorService triggerExecutor;
@@ -33,51 +36,50 @@ public class SmartTriggerApp implements Runnable {
 		
 		// create thread services for the triggers
 		// TODO: thread pool sizes may need to be elastic
-		triggerExecutor = Executors.newFixedThreadPool(triggers.size());
-		resetExecutor = Executors.newScheduledThreadPool(triggers.size());
+		triggerExecutor = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
+		resetExecutor = Executors.newScheduledThreadPool(THREAD_POOL_SIZE);
 		
 		// init each trigger
 		triggers.forEach((i, t) -> addTrigger(t));
 	}
 	
-	@SuppressWarnings("unchecked")
+//	@SuppressWarnings("unchecked")
 	public void addTrigger(String className) throws SmartTriggerException {
-		Class<? extends SmartTrigger> triggerClass;
+		System.out.println("inside addTrigger(String)");
 		try {
 			Class<?> cls = Class.forName(className);
-			triggerClass = ((Class<? extends SmartTrigger>) SmartTrigger.class.asSubclass(cls));
+//			Class<?> cls = ClassLoader.getSystemClassLoader().loadClass(className);
+			System.out.println("about to add triggerClass: " + cls.getSimpleName());
+			if (SmartTrigger.class.isAssignableFrom(cls)) {
+				Object obj = cls.getDeclaredConstructor().newInstance();
+				addTrigger(SmartTrigger.class.cast(obj));
+			}
 		}
-		catch (ClassNotFoundException e) {
-			throw new SmartTriggerException(e);
-		}
-		addTrigger(triggerClass);
-	}
-	
-	public <T extends SmartTrigger> void addTrigger(Class<T> triggerClass) throws SmartTriggerException {
-		try {
-			SmartTrigger trigger = triggerClass.getDeclaredConstructor().newInstance();
-			triggers.put(trigger.getId(), trigger);
-			addTrigger(trigger);
-		} 
 		catch (Exception e) {
+			System.err.println("Did we blow up here?????");
 			throw new SmartTriggerException(e);
 		}
+		System.out.println("Was this successfull?");
 	}
 	
-	protected void addTrigger(SmartTrigger t) {
+	public void addTrigger(SmartTrigger t) {
+		System.out.println("inside addTrigger(SmartTrigger)");
 		ScheduledFuture<?> resetTask = resetExecutor.scheduleAtFixedRate(() -> t.reset(), 1L, t.getResetInterval(), TimeUnit.SECONDS);
 		t.init(resetTask);
+		triggers.put(t.getId(), t);
+//		triggerExecutor.
 		triggerExecutor.execute(asRunnable(t));
 	}
 	
-	public void removeTrigger(String id) throws SmartTriggerException {
+	public SmartTrigger removeTrigger(String id) throws SmartTriggerException {
 		if (!triggers.containsKey(id)) {
 			throw new SmartTriggerException("Unknown Trigger: " + id);
 		}
 		
 		SmartTrigger trigger = triggers.get(id);
 		trigger.setState(SmartTriggerStateType.REMOVED);
-		triggers.remove(id); 
+		triggers.remove(id);
+		return trigger;
 	}
 	
 	public void run() {
@@ -96,9 +98,11 @@ public class SmartTriggerApp implements Runnable {
 			SmartTriggerStateType state = trigger.getState();
 			System.out.println("Trigger State: " + state);
 			try {
-				while (state != SmartTriggerStateType.REMOVED) {
+//				while (state != SmartTriggerStateType.REMOVED) {
+				while (trigger.shouldRun()) {
 					try {
-						if ((state == SmartTriggerStateType.RUNNING) && trigger.isReady()) {
+//						if ((state == SmartTriggerStateType.RUNNING) && trigger.isReady()) {
+						if (trigger.isReady()) {
 							trigger.fire();
 						}
 					}

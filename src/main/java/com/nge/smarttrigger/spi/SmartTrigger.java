@@ -23,4 +23,6 @@ public interface SmartTrigger {
 	public long getResetInterval();
 	
 	public long getFireInterval();
+
+	public boolean shouldRun();
 }
