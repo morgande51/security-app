@@ -1,6 +1,7 @@
 package com.nge.smarttrigger;
 
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
@@ -12,7 +13,11 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import javax.management.MBeanServer;
+import javax.management.ObjectName;
+
 import com.nge.smarttrigger.manager.TriggerInstaller;
+import com.nge.smarttrigger.manager.TriggerManagerImpl;
 import com.nge.smarttrigger.spi.SmartTrigger;
 import com.nge.smarttrigger.spi.SmartTriggerException;
 import com.nge.smarttrigger.spi.SmartTriggerStateType;
@@ -56,6 +61,20 @@ public class SmartTriggerApp implements Runnable {
 			}
 			addTrigger(t, Optional.ofNullable(props));
 		});
+		
+		// configure MBServer to support Triggers Management
+		try {
+			ObjectName objectName = new ObjectName("com.nge.smarttrigger.manger:type=basic,name=TriggerManager");
+			MBeanServer server = ManagementFactory.getPlatformMBeanServer();
+			TriggerManagerImpl managerMBean = new TriggerManagerImpl();
+			managerMBean.setApp(this);
+			managerMBean.setInstaller(TriggerInstaller.getInstaller());
+			server.registerMBean(managerMBean, objectName);
+		} 
+		catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	/*

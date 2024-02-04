@@ -1,6 +1,5 @@
 package com.nge.smarttrigger.manager;
 
-import java.io.IOException;
 import java.util.Optional;
 import java.util.Properties;
 
@@ -9,28 +8,20 @@ import com.nge.smarttrigger.spi.SmartTrigger;
 import com.nge.smarttrigger.spi.SmartTriggerException;
 import com.nge.smarttrigger.spi.SmartTriggerStateType;
 
-public class TriggerManagerImpl implements TriggerManagerMBean {
+public class TriggerManagerImpl implements TriggerManagerMXBean {
 
 	private SmartTriggerApp app;
 	private TriggerInstaller installer;
 	
-	public TriggerManagerImpl(SmartTriggerApp app, TriggerInstaller installer) {
-		this.app = app;
-		this.installer = installer;
-	}
-	
+	@Override
 	public String installTrigger(String triggerFQN) {
 		SmartTrigger trigger;
 		try {
 			trigger = installer.loadTrigger(triggerFQN);
 			installer.createConfigurationFor(trigger.getClass());
 		}
-		catch (SmartTriggerException e) {
-			// TODO: trigger cannot be installed
-			return null;
-		}
-		catch (IOException e) {
-			// TODO: this really shouldn't happen
+		catch (Exception e) {
+			handleException(e);
 			return null;
 		}
 		
@@ -38,26 +29,72 @@ public class TriggerManagerImpl implements TriggerManagerMBean {
 		return trigger.getId();
 	}
 	
+	@Override
+	public void removeTrigger(String triggerId) {
+		try {
+			SmartTrigger trigger = app.removeTrigger(triggerId);
+			installer.removeTrigger(trigger.getClass());
+		} 
+		catch (SmartTriggerException e) {
+			handleException(e);
+		}
+	}
+	
+	@Override
 	public String[] getTriggerIds() {
 		return app.getTriggerIds();
 	}
 	
+	@Override
 	public String getLoadingDirectory() {
 		return installer.getLoadingDirectory().toString();
 	}
 	
-	public String getTriggerState(String triggerId) throws SmartTriggerException {
-		SmartTrigger trigger = app.getTrigger(triggerId);
+	@Override
+	public String getTriggerState(String triggerId) {
+		SmartTrigger trigger = null;
+		try {
+			trigger = app.getTrigger(triggerId);
+		}
+		catch (SmartTriggerException e) {
+			handleException(e);
+			return null;
+		}
 		return trigger.getState().name();
 	}
 	
-	public void setTriggerOffline(String triggerId) throws SmartTriggerException {
-		SmartTrigger trigger = app.getTrigger(triggerId);
+	@Override
+	public void setTriggerOffline(String triggerId) {
+		SmartTrigger trigger = null;
+		try {
+			trigger = app.getTrigger(triggerId);
+		}
+		catch (SmartTriggerException e) {
+			handleException(e);
+			return;
+		}
 		trigger.setState(SmartTriggerStateType.OFFLINE);
 	}
+
+	public SmartTriggerApp getApp() {
+		return app;
+	}
+
+	public void setApp(SmartTriggerApp app) {
+		this.app = app;
+	}
+
+	public TriggerInstaller getInstaller() {
+		return installer;
+	}
+
+	public void setInstaller(TriggerInstaller installer) {
+		this.installer = installer;
+	}
 	
-	public void deleteTrigger(String triggerId) throws SmartTriggerException {
-		SmartTrigger trigger = app.removeTrigger(triggerId);
-		installer.removeTrigger(trigger.getClass());
+	private void handleException(Exception e) {
+		// TODO: handle this
+		System.err.println(e.getMessage());
+		e.printStackTrace();
 	}
 }

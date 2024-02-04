@@ -90,10 +90,11 @@ public class TriggerInstaller {
 		Path libJarPath = libDir.resolve(jarFileName);
 		try {
 			Files.copy(jarPath, libJarPath);
+			Files.delete(jarPath);
 		}
 		catch (IOException e) {
 			throw new SmartTriggerException(e);
-		}
+		}		
 		
 		// return the trigger;
 		return trigger;
@@ -105,7 +106,8 @@ public class TriggerInstaller {
 	
 	public void removeTrigger(Class<?> triggerClass) throws SmartTriggerException {
 		try {
-			Files.delete(getJarFor(triggerClass));
+			Path jarFile = libDir.resolve(triggerClass.getSimpleName() + JAR_EXTENSION);
+			Files.delete(jarFile);
 		}
 		catch (IOException e) {
 			throw new SmartTriggerException(e);
