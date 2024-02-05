@@ -2,8 +2,6 @@ package com.nge.smarttrigger.manager;
 
 public interface TriggerManagerMXBean {
 
-	public void setTriggerOffline(String triggerId);
-
 	public String getTriggerState(String triggerId);
 
 	public String getLoadingDirectory();
@@ -13,4 +11,8 @@ public interface TriggerManagerMXBean {
 	public void removeTrigger(String triggerId);
 
 	public String installTrigger(String triggerFQN);
+
+	public boolean makeTriggerOffline(String triggerId);
+	
+	public boolean makeTriggerOnline(String triggerId);
 }

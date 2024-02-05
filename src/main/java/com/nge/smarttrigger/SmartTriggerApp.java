@@ -3,7 +3,6 @@ package com.nge.smarttrigger;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Properties;
 import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
@@ -18,11 +17,16 @@ import javax.management.ObjectName;
 
 import com.nge.smarttrigger.manager.TriggerInstaller;
 import com.nge.smarttrigger.manager.TriggerManagerImpl;
+import com.nge.smarttrigger.spi.InitRequest;
 import com.nge.smarttrigger.spi.SmartTrigger;
 import com.nge.smarttrigger.spi.SmartTriggerException;
 import com.nge.smarttrigger.spi.SmartTriggerStateType;
 
 public class SmartTriggerApp implements Runnable {
+	
+	private static final Object DEV_MODE_PROPERTY = "com.nge.smarttrigger.SmartTriggerApp.devMode";
+	
+	private static final SmartTriggerApp SINGLETON = new SmartTriggerApp();
 	
 	// TODO: this should be configurable
 	public static final int THREAD_POOL_SIZE = 25;
@@ -30,18 +34,24 @@ public class SmartTriggerApp implements Runnable {
 	private Map<String, SmartTrigger> triggers;
 	private ScheduledExecutorService resetExecutor;
 	private ExecutorService triggerExecutor;
+	private boolean devMode;
 	
-	public SmartTriggerApp() {
+	static {
+		SINGLETON.init();
+	}
+	
+	private SmartTriggerApp() {
 		triggers = new ConcurrentHashMap<>();
-		init();
 	}
 	
 	public void init() {
+		devMode = System.getProperties().containsKey(DEV_MODE_PROPERTY);
+		
 		// Load the map with all the triggers
 		ServiceLoader<SmartTrigger> triggerLoader =  ServiceLoader.load(SmartTrigger.class);
 		triggerLoader.findFirst().orElseThrow();
 		triggers = new ConcurrentHashMap<>();
-		triggerLoader.forEach((t) -> triggers.put(t.getId(), t));
+		//triggerLoader.forEach((t) -> triggers.put(t.getId(), t));
 		
 		// create thread services for the triggers
 		// TODO: thread pool sizes may need to be elastic
@@ -49,26 +59,57 @@ public class SmartTriggerApp implements Runnable {
 		resetExecutor = Executors.newScheduledThreadPool(THREAD_POOL_SIZE);
 		
 		// init each trigger
-		triggers.forEach((i, t) -> {
-			Properties props = null;
+		TriggerInstaller ti = TriggerInstaller.getInstaller();
+		triggerLoader.forEach((t) -> {
+			Class<? extends SmartTrigger> triggerClass = t.getClass();
+			
+			// get the configuration for this trigger
+			Properties config = null;
 			try {
-				props = TriggerInstaller.getInstaller().getConfigurationFor(t.getClass());
+				config = ti.getConfiguration(triggerClass);
 			}
 			catch (IOException e) {
-				// property file cannot be read or other IO error
+				// config file cannot be read due to IO error
 				// TODO: log this
 				e.printStackTrace();
 			}
-			addTrigger(t, Optional.ofNullable(props));
+			
+			// get the info for this trigger
+			String triggerInfo;
+			try {
+				triggerInfo = ti.getTriggerInfo(triggerClass);
+			}
+			catch (IOException e) {
+				System.err.println("Are we in DEV mode: " + devMode);
+				if (devMode) {
+					ClassLoader cl = ClassLoader.getSystemClassLoader();
+					String fileName = ti.getTriggerInfoFileName(triggerClass);
+					java.io.InputStream stream = cl.getResourceAsStream(fileName);
+					try {
+						triggerInfo = ti.getTriggerInfo(stream);
+					}
+					catch (IOException ioe) {
+						System.err.println("no trigger info: " + fileName);
+						return;
+					}
+				}
+				else {
+					// trigger info cannot be found for trigger
+					// TODO: log this
+					System.err.append("no config for this trigger: " + t.getName());
+					e.printStackTrace();
+					return;
+				}
+			}
+			
+			addTrigger(t, new InitRequest(config, triggerInfo));
 		});
 		
 		// configure MBServer to support Triggers Management
 		try {
-			ObjectName objectName = new ObjectName("com.nge.smarttrigger.manger:type=basic,name=TriggerManager");
+			ObjectName objectName = new ObjectName("com.dme:type=SmartTrigger,name=TriggerManager");
 			MBeanServer server = ManagementFactory.getPlatformMBeanServer();
 			TriggerManagerImpl managerMBean = new TriggerManagerImpl();
-			managerMBean.setApp(this);
-			managerMBean.setInstaller(TriggerInstaller.getInstaller());
 			server.registerMBean(managerMBean, objectName);
 		} 
 		catch (Exception e) {
@@ -98,12 +139,11 @@ public class SmartTriggerApp implements Runnable {
 	}
 	*/
 	
-	public void addTrigger(SmartTrigger t, Optional<Properties> configuration) {
-		ScheduledFuture<?> resetTask = resetExecutor.scheduleAtFixedRate(() -> t.reset(), 1L, t.getResetInterval(), TimeUnit.SECONDS);
-		t.init(resetTask, configuration);
-		triggers.put(t.getId(), t);
-//		triggerExecutor.
-		triggerExecutor.execute(asRunnable(t));
+	public void addTrigger(SmartTrigger trigger, InitRequest request) {
+		ScheduledFuture<?> resetTask = resetExecutor.scheduleAtFixedRate(() -> trigger.reset(), 1L, trigger.getResetInterval(), TimeUnit.SECONDS);
+		trigger.init(resetTask, request);
+		triggers.put(request.getId(), trigger);
+		triggerExecutor.execute(asRunnable(trigger));
 	}
 	
 	public SmartTrigger removeTrigger(String id) throws SmartTriggerException {
@@ -167,5 +207,9 @@ public class SmartTriggerApp implements Runnable {
 	
 	public String[] getTriggerIds() {
 		return triggers.keySet().toArray((i) -> new String[i]);
+	}
+	
+	public static SmartTriggerApp getApp() {
+		return SINGLETON;
 	}
 }

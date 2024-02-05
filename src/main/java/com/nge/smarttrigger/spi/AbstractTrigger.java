@@ -2,9 +2,7 @@ package com.nge.smarttrigger.spi;
 
 import static com.nge.smarttrigger.spi.SmartTriggerStateType.*;
 
-import java.util.Optional;
 import java.util.Properties;
-import java.util.UUID;
 import java.util.concurrent.ScheduledFuture;
 
 public abstract class AbstractTrigger implements SmartTrigger {
@@ -17,22 +15,28 @@ public abstract class AbstractTrigger implements SmartTrigger {
 	private SmartTriggerStateType state;
 	private ScheduledFuture<?> resetTask;
 	private Properties configuration;
+	private String info;
 	
 	public AbstractTrigger(String name) {
 		this.name = name;
-		id = UUID.randomUUID().toString();
 	}
 	
 	@Override
-	public void init(ScheduledFuture<?> resetTask, Optional<Properties> config) {
+	public void init(ScheduledFuture<?> resetTask, InitRequest request) {
 		this.resetTask = resetTask;
+		this.info = request.getTriggerInfo();
+		this.configuration = request.getConfiguration();
+		this.id = request.getId();
 		
 		SmartTriggerStateType initalState;
-		if (config.isEmpty()) {
+		if (configuration == null) {
 			initalState = ERROR;
 		}
+		else if (configuration.isEmpty()) {
+			initalState = OFFLINE;
+			initConfiguration(configuration);
+		}
 		else {
-			configuration = config.get();
 			initalState = RUNNING;
 		}
 		setState(initalState);
@@ -46,6 +50,11 @@ public abstract class AbstractTrigger implements SmartTrigger {
 	@Override
 	public String getId() {
 		return id;
+	}
+	
+	@Override
+	public String getInfo() {
+		return info;
 	}
 	
 	@Override
@@ -109,4 +118,6 @@ public abstract class AbstractTrigger implements SmartTrigger {
 	public void updateProperty(String name, String value) {
 		configuration.put(name, value);
 	}
+	
+	protected void initConfiguration(Properties config) {}
 }
