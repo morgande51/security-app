@@ -2,6 +2,10 @@ package com.nge.smarttrigger.manager;
 
 import java.io.IOException;
 import java.util.Properties;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import javax.management.ObjectName;
 
 import com.nge.smarttrigger.SmartTriggerApp;
 import com.nge.smarttrigger.spi.SmartTrigger;
@@ -10,6 +14,19 @@ import com.nge.smarttrigger.spi.SmartTriggerStateType;
 
 public class TriggerManagerImpl implements TriggerManagerMXBean {
 	
+	private ObjectName name;
+	
+	public TriggerManagerImpl() {};
+	
+	public TriggerManagerImpl(ObjectName name) {
+		this.name = name;
+	}
+	
+	@Override
+	public ObjectName getObjectName() {
+		return name;
+	}
+	
 	@Override
 	public String installTrigger(String triggerFQN) {
 		String triggerId;
@@ -17,8 +34,16 @@ public class TriggerManagerImpl implements TriggerManagerMXBean {
 		try {
 			NewTriggerRequest request = installer.loadNewTrigger(triggerFQN);
 			SmartTrigger trigger = request.getTrigger();
-			Properties config = trigger.getProperties();
 			SmartTriggerApp.getApp().addTrigger(trigger, request);
+			
+			Properties requestConfig = request.getConfiguration();
+			Properties triggerConfig = trigger.getProperties();
+			System.err.println("Request Config is null: " + (requestConfig == null));
+			System.err.println("Trigger Config is null: " + (triggerConfig == null));
+			System.err.println("Request Config = Trigger Config: " + (requestConfig == triggerConfig));
+			System.err.println("Request Config equals Trigger Config: " + (requestConfig.equals(triggerConfig)));
+			Properties config = trigger.getProperties();
+			
 			installer.saveConfiguration(trigger.getClass(), config);
 			triggerId = request.getId();
 		}
@@ -56,7 +81,7 @@ public class TriggerManagerImpl implements TriggerManagerMXBean {
 	}
 	
 	@Override
-	public String getTriggerState(String triggerId) {
+	public SmartTriggerStateType getTriggerState(String triggerId) {
 		SmartTrigger trigger = null;
 		try {
 			trigger = SmartTriggerApp.getApp().getTrigger(triggerId);
@@ -65,7 +90,7 @@ public class TriggerManagerImpl implements TriggerManagerMXBean {
 			handleException(e);
 			return null;
 		}
-		return trigger.getState().name();
+		return trigger.getState();
 	}
 	
 	@Override
@@ -96,6 +121,18 @@ public class TriggerManagerImpl implements TriggerManagerMXBean {
 			success = false;
 		}
 		return success;
+	}
+	
+	@Override
+	public String getTriggerInfo(String triggerId) throws SmartTriggerException {
+		SmartTrigger trigger = SmartTriggerApp.getApp().getTrigger(triggerId);
+		return trigger.getInfo();
+	}
+	
+	@Override
+	public Set<SimpleKeyValue> getTriggerConfig(String triggerId) throws SmartTriggerException {
+		SmartTrigger trigger = SmartTriggerApp.getApp().getTrigger(triggerId);
+		return trigger.getProperties().entrySet().stream().map(e -> SimpleKeyValue.buildFrom(e)).collect(Collectors.toSet());
 	}
 	
 	private void handleException(Exception e) {

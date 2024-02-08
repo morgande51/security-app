@@ -24,6 +24,8 @@ import com.nge.smarttrigger.spi.SmartTriggerStateType;
 
 public class SmartTriggerApp implements Runnable {
 	
+	public static final String JMX_OBJECT_NAME = "com.dme:type=SmartTrigger,name=TriggerManager";
+	
 	private static final Object DEV_MODE_PROPERTY = "com.nge.smarttrigger.SmartTriggerApp.devMode";
 	
 	private static final SmartTriggerApp SINGLETON = new SmartTriggerApp();
@@ -49,7 +51,9 @@ public class SmartTriggerApp implements Runnable {
 		
 		// Load the map with all the triggers
 		ServiceLoader<SmartTrigger> triggerLoader =  ServiceLoader.load(SmartTrigger.class);
-		triggerLoader.findFirst().orElseThrow();
+		if (triggerLoader.findFirst().isEmpty()) {
+			System.err.println("No known triggers");
+		}
 		triggers = new ConcurrentHashMap<>();
 		//triggerLoader.forEach((t) -> triggers.put(t.getId(), t));
 		
@@ -96,7 +100,7 @@ public class SmartTriggerApp implements Runnable {
 				else {
 					// trigger info cannot be found for trigger
 					// TODO: log this
-					System.err.append("no config for this trigger: " + t.getName());
+					System.err.append("no config for this trigger: " + t.getId());
 					e.printStackTrace();
 					return;
 				}
@@ -106,10 +110,11 @@ public class SmartTriggerApp implements Runnable {
 		});
 		
 		// configure MBServer to support Triggers Management
+		// TODO: refactor this into its own method
 		try {
-			ObjectName objectName = new ObjectName("com.dme:type=SmartTrigger,name=TriggerManager");
+			ObjectName objectName = new ObjectName(JMX_OBJECT_NAME);
 			MBeanServer server = ManagementFactory.getPlatformMBeanServer();
-			TriggerManagerImpl managerMBean = new TriggerManagerImpl();
+			TriggerManagerImpl managerMBean = new TriggerManagerImpl(objectName);
 			server.registerMBean(managerMBean, objectName);
 		} 
 		catch (Exception e) {

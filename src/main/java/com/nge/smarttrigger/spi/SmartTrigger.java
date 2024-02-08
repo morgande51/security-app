@@ -5,8 +5,6 @@ import java.util.concurrent.ScheduledFuture;
 
 public interface SmartTrigger {
 	
-	public String getName();
-	
 	public String getId();
 	
 	public boolean isReady();

@@ -1,8 +1,14 @@
 package com.nge.smarttrigger.manager;
 
-public interface TriggerManagerMXBean {
+import java.lang.management.PlatformManagedObject;
+import java.util.Set;
 
-	public String getTriggerState(String triggerId);
+import com.nge.smarttrigger.spi.SmartTriggerException;
+import com.nge.smarttrigger.spi.SmartTriggerStateType;
+
+public interface TriggerManagerMXBean extends PlatformManagedObject {
+
+	public SmartTriggerStateType getTriggerState(String triggerId);
 
 	public String getLoadingDirectory();
 
@@ -15,4 +21,8 @@ public interface TriggerManagerMXBean {
 	public boolean makeTriggerOffline(String triggerId);
 	
 	public boolean makeTriggerOnline(String triggerId);
+	
+	public String getTriggerInfo(String triggerId) throws SmartTriggerException;
+
+	public Set<SimpleKeyValue> getTriggerConfig(String triggerId) throws SmartTriggerException;
 }

@@ -11,15 +11,10 @@ public abstract class AbstractTrigger implements SmartTrigger {
 	public static final long DEFAULT_RESET_INTERVAL = 5L;
 	
 	private String id;
-	private String name;
 	private SmartTriggerStateType state;
 	private ScheduledFuture<?> resetTask;
 	private Properties configuration;
 	private String info;
-	
-	public AbstractTrigger(String name) {
-		this.name = name;
-	}
 	
 	@Override
 	public void init(ScheduledFuture<?> resetTask, InitRequest request) {
@@ -40,11 +35,6 @@ public abstract class AbstractTrigger implements SmartTrigger {
 			initalState = RUNNING;
 		}
 		setState(initalState);
-	}
-
-	@Override
-	public String getName() {
-		return name;
 	}
 
 	@Override
@@ -92,7 +82,7 @@ public abstract class AbstractTrigger implements SmartTrigger {
 	
 	@Override
 	public final synchronized void setState(SmartTriggerStateType state) {
-		if (state == SmartTriggerStateType.REMOVED) {
+		if (state == REMOVED || state == ERROR) {
 			resetTask.cancel(true);
 		}
 		this.state = state;
