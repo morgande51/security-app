@@ -1,6 +1,11 @@
 package com.nge.smarttrigger.manager;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.Base64;
 import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -133,6 +138,83 @@ public class TriggerManagerImpl implements TriggerManagerMXBean {
 	public Set<SimpleKeyValue> getTriggerConfig(String triggerId) throws SmartTriggerException {
 		SmartTrigger trigger = SmartTriggerApp.getApp().getTrigger(triggerId);
 		return trigger.getProperties().entrySet().stream().map(e -> SimpleKeyValue.buildFrom(e)).collect(Collectors.toSet());
+	}
+	
+	@Override
+	public void updateTriggerConfig(String triggerId, String name, String value) throws SmartTriggerException {
+		SmartTriggerApp app = SmartTriggerApp.getApp();
+		SmartTrigger trigger = app.removeTrigger(triggerId);
+		trigger.updateProperty(name, value);
+		try {
+			TriggerInstaller.getInstaller().saveConfiguration(trigger.getClass(), trigger.getProperties());
+		}
+		catch (IOException e) {
+			handleException(e);
+		}
+		
+		app.restartTrigger(trigger);
+	}
+	
+	@SuppressWarnings("unchecked")
+	@Override
+	public void updateTriggerConfig(String triggerId, String serializedConfig) throws SmartTriggerException {
+		System.out.println("wtf....." + serializedConfig);
+		byte[] decodedBytes = Base64.getDecoder().decode(serializedConfig);
+		Set<SimpleKeyValue> properties = null;
+		try (ObjectInputStream is = new ObjectInputStream(new ByteArrayInputStream(decodedBytes))) {
+			properties = (Set<SimpleKeyValue>) is.readObject();
+			if (properties.isEmpty()) {
+				System.err.println("NO FREAKING WAY!");
+			}
+		}
+		catch (IOException | ClassNotFoundException e) {
+			throw new SmartTriggerException(e);
+		}
+		properties.forEach(p -> System.out.println("Prop: " + p.getKey() + ": val" + p.getValue()));
+		SmartTriggerApp app = SmartTriggerApp.getApp();
+		SmartTrigger trigger = app.removeTrigger(triggerId);
+		properties.forEach(p -> trigger.updateProperty(p.getKey(), p.getValue()));
+		try {
+			TriggerInstaller.getInstaller().saveConfiguration(trigger.getClass(), trigger.getProperties());
+		}
+		catch (IOException e) {
+			handleException(e);
+		}
+		
+		app.restartTrigger(trigger);
+	}
+	
+	@Override
+	public void updateTriggerConfig(String triggerId, Set<SimpleKeyValue> properties) throws SmartTriggerException {
+		properties.forEach(p -> System.out.println("Prop: " + p.getKey() + ": val" + p.getValue()));
+		SmartTriggerApp app = SmartTriggerApp.getApp();
+		SmartTrigger trigger = app.removeTrigger(triggerId);
+		properties.forEach(p -> trigger.updateProperty(p.getKey(), p.getValue()));
+		try {
+			TriggerInstaller.getInstaller().saveConfiguration(trigger.getClass(), trigger.getProperties());
+		}
+		catch (IOException e) {
+			handleException(e);
+		}
+		
+		app.restartTrigger(trigger);
+	}
+	
+	@Override
+	public SmartTriggerStateType restartTrigger(String triggerId) throws SmartTriggerException {
+		SmartTriggerApp app = SmartTriggerApp.getApp();
+		SmartTrigger trigger = app.getTrigger(triggerId);
+		app.restartTrigger(trigger);
+		return trigger.getState();
+	}
+	
+	@Override
+	public String getError(String triggerId) throws SmartTriggerException {
+		SmartTrigger trigger = SmartTriggerApp.getApp().getTrigger(triggerId);
+		StringWriter writer = new StringWriter();
+		PrintWriter pw = new PrintWriter(writer);
+		trigger.getRuntimeException().printStackTrace(pw);
+		return writer.toString();
 	}
 	
 	private void handleException(Exception e) {

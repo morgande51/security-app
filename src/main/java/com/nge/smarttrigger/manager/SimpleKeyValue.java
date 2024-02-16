@@ -3,7 +3,7 @@ package com.nge.smarttrigger.manager;
 import java.io.Serializable;
 import java.util.Map.Entry;
 
-public class SimpleKeyValue implements Serializable {
+public class SimpleKeyValue implements Serializable, Cloneable {
 
 	private String key;
 	
@@ -25,6 +25,14 @@ public class SimpleKeyValue implements Serializable {
 
 	public void setValue(String value) {
 		this.value = value;
+	}
+	
+	@Override
+	protected Object clone() throws CloneNotSupportedException {
+		SimpleKeyValue kv = new SimpleKeyValue();
+		kv.key = key;
+		kv.value = value;
+		return kv;
 	}
 	
 	public static final SimpleKeyValue buildFrom(Entry<Object, Object> entry) {

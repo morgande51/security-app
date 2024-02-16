@@ -9,6 +9,8 @@ import com.nge.smarttrigger.spi.SmartTriggerStateType;
 public interface TriggerManagerMXBean extends PlatformManagedObject {
 
 	public SmartTriggerStateType getTriggerState(String triggerId);
+	
+	public SmartTriggerStateType restartTrigger(String triggerId) throws SmartTriggerException;
 
 	public String getLoadingDirectory();
 
@@ -25,4 +27,12 @@ public interface TriggerManagerMXBean extends PlatformManagedObject {
 	public String getTriggerInfo(String triggerId) throws SmartTriggerException;
 
 	public Set<SimpleKeyValue> getTriggerConfig(String triggerId) throws SmartTriggerException;
+	
+	public void updateTriggerConfig(String triggerId, Set<SimpleKeyValue> properties) throws SmartTriggerException;
+	
+	public void updateTriggerConfig(String triggerId, String serializedConfig) throws SmartTriggerException;
+	
+	public void updateTriggerConfig(String triggerId, String name, String value) throws SmartTriggerException;
+	
+	public String getError(String triggerId) throws SmartTriggerException;
 }

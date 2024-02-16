@@ -145,21 +145,29 @@ public class SmartTriggerApp implements Runnable {
 	*/
 	
 	public void addTrigger(SmartTrigger trigger, InitRequest request) {
-		ScheduledFuture<?> resetTask = resetExecutor.scheduleAtFixedRate(() -> trigger.reset(), 1L, trigger.getResetInterval(), TimeUnit.SECONDS);
+		ScheduledFuture<?> resetTask = createResetScheduler(trigger);
 		trigger.init(resetTask, request);
 		triggers.put(request.getId(), trigger);
 		triggerExecutor.execute(asRunnable(trigger));
 	}
 	
-	public SmartTrigger removeTrigger(String id) throws SmartTriggerException {
-		if (!triggers.containsKey(id)) {
-			throw new SmartTriggerException("Unknown Trigger: " + id);
-		}
-		
-		SmartTrigger trigger = triggers.get(id);
+	public SmartTrigger removeTrigger(String id) throws SmartTriggerException {		
+		SmartTrigger trigger = getTrigger(id);
 		trigger.setState(SmartTriggerStateType.REMOVED);
-		triggers.remove(id);
+//		triggers.remove(id);
 		return trigger;
+	}
+	
+	public void deleteTrigger(String id) throws SmartTriggerException {
+		SmartTrigger trigger = removeTrigger(id);
+		triggers.remove(id);
+		TriggerInstaller.getInstaller().removeTrigger(trigger.getClass());
+	}
+	
+	public void restartTrigger(SmartTrigger trigger) {
+		ScheduledFuture<?> resetTask = createResetScheduler(trigger);
+		trigger.init(resetTask);
+		triggerExecutor.execute(asRunnable(trigger));
 	}
 	
 	public void run() {
@@ -198,8 +206,24 @@ public class SmartTriggerApp implements Runnable {
 				// TODO: handle this
 				e.printStackTrace();
 			}
+			catch (RuntimeException e) {
+				trigger.setRuntimeException(e);
+				trigger.setState(SmartTriggerStateType.ERROR);
+			}
 		};
 		return r;
+	}
+	
+	private ScheduledFuture<?> createResetScheduler(SmartTrigger trigger) {
+		return resetExecutor.scheduleAtFixedRate(() -> {
+			try {
+				trigger.reset();
+			}
+			catch (SmartTriggerException e) {
+				// TODO: log this
+				e.printStackTrace();
+			}
+		}, 1L, trigger.getResetInterval(), TimeUnit.SECONDS);
 	}
 	
 	public SmartTrigger getTrigger(String id) throws SmartTriggerException {

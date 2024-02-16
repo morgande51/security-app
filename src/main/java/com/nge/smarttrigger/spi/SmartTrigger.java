@@ -13,6 +13,8 @@ public interface SmartTrigger {
 	
 	public void init(ScheduledFuture<?> resetTask, InitRequest request);
 	
+	public void init(ScheduledFuture<?> resetTask);
+	
 	public Properties getProperties();
 	
 	public String getInfo();
@@ -23,11 +25,15 @@ public interface SmartTrigger {
 	
 	public void setState(SmartTriggerStateType state);
 	
-	public void reset();
+	public void reset() throws SmartTriggerException;
 	
 	public long getResetInterval();
 	
 	public long getFireInterval();
 
 	public boolean shouldRun();
+	
+	public RuntimeException getRuntimeException();
+	
+	public void setRuntimeException(RuntimeException e);
 }

@@ -15,6 +15,7 @@ public abstract class AbstractTrigger implements SmartTrigger {
 	private ScheduledFuture<?> resetTask;
 	private Properties configuration;
 	private String info;
+	private RuntimeException runtimeExcpetion; 
 	
 	@Override
 	public void init(ScheduledFuture<?> resetTask, InitRequest request) {
@@ -35,6 +36,12 @@ public abstract class AbstractTrigger implements SmartTrigger {
 			initalState = RUNNING;
 		}
 		setState(initalState);
+	}
+	
+	@Override
+	public void init(ScheduledFuture<?> resetTask) {
+		this.resetTask = resetTask;
+		setState(RUNNING);
 	}
 
 	@Override
@@ -107,6 +114,16 @@ public abstract class AbstractTrigger implements SmartTrigger {
 	@Override
 	public void updateProperty(String name, String value) {
 		configuration.put(name, value);
+	}
+	
+	@Override
+	public RuntimeException getRuntimeException() {
+		return runtimeExcpetion;
+	}
+	
+	@Override
+	public void setRuntimeException(RuntimeException e) {
+		this.runtimeExcpetion = e;
 	}
 	
 	protected void initConfiguration(Properties config) {}
