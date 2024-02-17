@@ -16,7 +16,7 @@ public interface TriggerManagerMXBean extends PlatformManagedObject {
 
 	public String[] getTriggerIds();
 
-	public void removeTrigger(String triggerId);
+	public void deleteTrigger(String triggerId);
 
 	public String installTrigger(String triggerFQN);
 

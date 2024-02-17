@@ -65,10 +65,9 @@ public class TriggerManagerImpl implements TriggerManagerMXBean {
 	}
 	
 	@Override
-	public void removeTrigger(String triggerId) {
+	public void deleteTrigger(String triggerId) {
 		try {
-			SmartTrigger trigger = SmartTriggerApp.getApp().removeTrigger(triggerId);
-			TriggerInstaller.getInstaller().removeTrigger(trigger.getClass());
+			SmartTriggerApp.getApp().deleteTrigger(triggerId);
 		} 
 		catch (SmartTriggerException e) {
 			handleException(e);
