@@ -80,8 +80,13 @@ public class TriggerInstaller {
 			throw new IOException(jarPath + " does not exist or is not readable/writeable");
 		}
 		
+		// copy the jar file over to the library and remove the old jar
+		Path libJarPath = libDir.resolve(jarFileName);
+		Files.copy(jarPath, libJarPath);
+		Files.delete(jarPath);
+		
 		// load the new trigger from the fileSystem
-		JarLoadingAgent.addToClassPath(jarPath.toFile());
+		JarLoadingAgent.addToClassPath(libJarPath.toFile());
 		Class<SmartTrigger> triggerClass = (Class<SmartTrigger>) getClassFor(triggerFQN);
 		SmartTrigger trigger;
 		try {
@@ -93,15 +98,10 @@ public class TriggerInstaller {
 		
 		// load info about trigger from jar file
 		String infoFileName = String.format(TRIGGER_INFO_FMT, triggerClass.getName());
-		String info = getTriggerInfo(jarPath, infoFileName);
+		String info = getTriggerInfo(libJarPath, infoFileName);
 		
 		// create an empty Properties file for the new trigger
 		Properties config = createConfigurationFor(trigger.getClass());
-					
-		// copy the jar file over to the library and remove the old jar
-		Path libJarPath = libDir.resolve(jarFileName);
-		Files.copy(jarPath, libJarPath);
-		Files.delete(jarPath);
 		
 		return new NewTriggerRequest(config, info, trigger);
 	}

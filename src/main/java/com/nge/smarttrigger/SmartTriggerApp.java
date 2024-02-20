@@ -200,7 +200,7 @@ public class SmartTriggerApp implements Runnable {
 					
 					Thread.sleep(trigger.getFireInterval());
 				}
-				System.out.println("Trigger[" + trigger.getId() + "] + has stopped");
+				System.out.println("Trigger[" + trigger.getId() + "] has stopped");
 			}
 			catch (InterruptedException e) {
 				// TODO: handle this

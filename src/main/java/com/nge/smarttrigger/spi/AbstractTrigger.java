@@ -18,7 +18,7 @@ public abstract class AbstractTrigger implements SmartTrigger {
 	private RuntimeException runtimeExcpetion; 
 	
 	@Override
-	public void init(ScheduledFuture<?> resetTask, InitRequest request) {
+	public final void init(ScheduledFuture<?> resetTask, InitRequest request) {
 		this.resetTask = resetTask;
 		this.info = request.getTriggerInfo();
 		this.configuration = request.getConfiguration();
@@ -33,14 +33,16 @@ public abstract class AbstractTrigger implements SmartTrigger {
 			initConfiguration(configuration);
 		}
 		else {
+			init();
 			initalState = RUNNING;
 		}
 		setState(initalState);
 	}
 	
 	@Override
-	public void init(ScheduledFuture<?> resetTask) {
+	public final void init(ScheduledFuture<?> resetTask) {
 		this.resetTask = resetTask;
+		init();
 		setState(RUNNING);
 	}
 
@@ -93,7 +95,7 @@ public abstract class AbstractTrigger implements SmartTrigger {
 			resetTask.cancel(true);
 		}
 		this.state = state;
-		System.out.println("Tigger[" + id + "] Current state: " + getState());
+		System.out.println("Trigger[" + id + "] Current state: " + getState());
 	}
 	
 	@Override
@@ -127,4 +129,6 @@ public abstract class AbstractTrigger implements SmartTrigger {
 	}
 	
 	protected void initConfiguration(Properties config) {}
+	
+	protected void init() {}
 }

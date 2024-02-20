@@ -29,9 +29,7 @@ public interface TriggerManagerMXBean extends PlatformManagedObject {
 	public Set<SimpleKeyValue> getTriggerConfig(String triggerId) throws SmartTriggerException;
 	
 	public void updateTriggerConfig(String triggerId, Set<SimpleKeyValue> properties) throws SmartTriggerException;
-	
-	public void updateTriggerConfig(String triggerId, String serializedConfig) throws SmartTriggerException;
-	
+		
 	public void updateTriggerConfig(String triggerId, String name, String value) throws SmartTriggerException;
 	
 	public String getError(String triggerId) throws SmartTriggerException;

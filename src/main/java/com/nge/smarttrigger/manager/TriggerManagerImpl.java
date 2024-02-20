@@ -1,11 +1,8 @@
 package com.nge.smarttrigger.manager;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.Base64;
 import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -154,38 +151,9 @@ public class TriggerManagerImpl implements TriggerManagerMXBean {
 		app.restartTrigger(trigger);
 	}
 	
-	@SuppressWarnings("unchecked")
-	@Override
-	public void updateTriggerConfig(String triggerId, String serializedConfig) throws SmartTriggerException {
-		System.out.println("wtf....." + serializedConfig);
-		byte[] decodedBytes = Base64.getDecoder().decode(serializedConfig);
-		Set<SimpleKeyValue> properties = null;
-		try (ObjectInputStream is = new ObjectInputStream(new ByteArrayInputStream(decodedBytes))) {
-			properties = (Set<SimpleKeyValue>) is.readObject();
-			if (properties.isEmpty()) {
-				System.err.println("NO FREAKING WAY!");
-			}
-		}
-		catch (IOException | ClassNotFoundException e) {
-			throw new SmartTriggerException(e);
-		}
-		properties.forEach(p -> System.out.println("Prop: " + p.getKey() + ": val" + p.getValue()));
-		SmartTriggerApp app = SmartTriggerApp.getApp();
-		SmartTrigger trigger = app.removeTrigger(triggerId);
-		properties.forEach(p -> trigger.updateProperty(p.getKey(), p.getValue()));
-		try {
-			TriggerInstaller.getInstaller().saveConfiguration(trigger.getClass(), trigger.getProperties());
-		}
-		catch (IOException e) {
-			handleException(e);
-		}
-		
-		app.restartTrigger(trigger);
-	}
-	
 	@Override
 	public void updateTriggerConfig(String triggerId, Set<SimpleKeyValue> properties) throws SmartTriggerException {
-		properties.forEach(p -> System.out.println("Prop: " + p.getKey() + ": val" + p.getValue()));
+		properties.forEach(p -> System.out.println("Prop: " + p.getKey() + ": val " + p.getValue()));
 		SmartTriggerApp app = SmartTriggerApp.getApp();
 		SmartTrigger trigger = app.removeTrigger(triggerId);
 		properties.forEach(p -> trigger.updateProperty(p.getKey(), p.getValue()));
