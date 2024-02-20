@@ -9,13 +9,6 @@
   	<maven.compiler.source>${java.version}</maven.compiler.source>
   	<maven.compiler.target>${java.version}</maven.compiler.target>
   </properties>
-  <dependencies>
-  	<dependency>
-  		<groupId>com.dme</groupId>
-  		<artifactId>JarLoadingAgent</artifactId>
-  		<version>0.0.1-SNAPSHOT</version>
-  	</dependency>
-  </dependencies>
   <build>
   	<plugins>
   		<plugin>
@@ -32,4 +25,11 @@
   		</plugin>
   	</plugins>
   </build>
+  <dependencies>
+  	<dependency>
+  		<groupId>ca.cgjennings.jvm</groupId>
+  		<artifactId>jar-loading-agent</artifactId>
+  		<version>1.0.0</version>
+  	</dependency>
+  </dependencies>
 </project>

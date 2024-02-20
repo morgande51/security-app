@@ -16,9 +16,10 @@ import java.util.Properties;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 
-import com.dme.agent.JarLoadingAgent;
 import com.nge.smarttrigger.spi.SmartTrigger;
 import com.nge.smarttrigger.spi.SmartTriggerException;
+
+import ca.cgjennings.jvm.JarLoader;
 
 public class TriggerInstaller {
 //	private static final Log
@@ -86,7 +87,7 @@ public class TriggerInstaller {
 		Files.delete(jarPath);
 		
 		// load the new trigger from the fileSystem
-		JarLoadingAgent.addToClassPath(libJarPath.toFile());
+		JarLoader.addToClassPath(libJarPath.toFile());
 		Class<SmartTrigger> triggerClass = (Class<SmartTrigger>) getClassFor(triggerFQN);
 		SmartTrigger trigger;
 		try {
