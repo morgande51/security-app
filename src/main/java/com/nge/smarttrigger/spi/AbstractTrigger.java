@@ -5,7 +5,12 @@ import static com.nge.smarttrigger.spi.SmartTriggerStateType.*;
 import java.util.Properties;
 import java.util.concurrent.ScheduledFuture;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public abstract class AbstractTrigger implements SmartTrigger {
+	
+	private static final Logger logger = LoggerFactory.getLogger(AbstractTrigger.class);
 	
 	public static final long DEFAULT_FIRE_INTERVAL = 1000L;
 	public static final long DEFAULT_RESET_INTERVAL = 5L;
@@ -57,7 +62,7 @@ public abstract class AbstractTrigger implements SmartTrigger {
 	@Override
 	public void reset() {
 		if (getState() == PAUSED) {
-			System.out.println("The trigger is being reset");
+			logger.info("Trigger[{}] is being reset", id);
 			setState(RUNNING);
 		}
 	}
@@ -96,7 +101,7 @@ public abstract class AbstractTrigger implements SmartTrigger {
 			runtimeExcpetion = null;
 		}
 		this.state = state;
-		System.out.println("Trigger[" + id + "] Current state: " + state);
+		logger.info("Trigger[{}] current state: {}", id, state);
 	}
 	
 	@Override

@@ -16,14 +16,18 @@ import java.util.Properties;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.nge.smarttrigger.spi.SmartTrigger;
 import com.nge.smarttrigger.spi.SmartTriggerException;
 
 import ca.cgjennings.jvm.JarLoader;
 
 public class TriggerInstaller {
-//	private static final Log
-//	private static final Logger logger = LogManager.getLogManager().
+	
+	private static final Logger logger = LoggerFactory.getLogger(TriggerInstaller.class)
+			;
 	public static final String TRIGGER_DIR_PATH_PROPERTY = "com.dme.smarttrigger.lib";
 	public static final String TRIGGER_CONFIG_PATH_PROPERTY = "com.dme.smarttrigger.config";
 	public static final String TRIGGER_LOADING_DIR = "SmartTrigger/loading";
@@ -56,9 +60,9 @@ public class TriggerInstaller {
 		configDir = getDirectoryFor(System.getProperty(TRIGGER_CONFIG_PATH_PROPERTY));
 		
 		String tmpdir = System.getProperty(SYSTEM_TEMP_DIR);
-		System.err.println("System Temp: " + tmpdir);
+		logger.info("System Temp: {}", tmpdir);
 		loadingDir = getDirectoryFor(Paths.get(tmpdir, TRIGGER_LOADING_DIR), true);
-		System.err.println("Loading from: " + loadingDir);
+		logger.info("Loading from: {}", loadingDir);
 	}
 	
 	private Path getDirectoryFor(String dirPath) throws IOException {
@@ -134,7 +138,7 @@ public class TriggerInstaller {
 			}
 		}
 		else if (!configFile.exists()) {
-			Files.list(configDir).forEach((p) -> System.err.println(p));
+			Files.list(configDir).forEach((p) -> logger.debug(p.toString()));
 			throw new IOException(configFile.getPath() + " exist: " + configFile.exists());
 		}
 		else {
@@ -185,7 +189,7 @@ public class TriggerInstaller {
 	}
 	
 	private String getTriggerInfo(Path jarPath, String fileName) throws IOException {
-		System.err.println("going for fileName: " + fileName);
+		logger.info("going for fileName: {}", fileName);
 		JarFile jf = new JarFile(jarPath.toFile());
 		ZipEntry infoEntry = jf.getEntry(fileName);
 		return getTriggerInfo(jf.getInputStream(infoEntry));

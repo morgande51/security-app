@@ -9,12 +9,17 @@ import java.util.stream.Collectors;
 
 import javax.management.ObjectName;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.nge.smarttrigger.SmartTriggerApp;
 import com.nge.smarttrigger.spi.SmartTrigger;
 import com.nge.smarttrigger.spi.SmartTriggerException;
 import com.nge.smarttrigger.spi.SmartTriggerStateType;
 
 public class TriggerManagerImpl implements TriggerManagerMXBean {
+	
+	private static final Logger logger = LoggerFactory.getLogger(TriggerManagerImpl.class);
 	
 	private ObjectName name;
 	
@@ -40,10 +45,10 @@ public class TriggerManagerImpl implements TriggerManagerMXBean {
 			
 			Properties requestConfig = request.getConfiguration();
 			Properties triggerConfig = trigger.getProperties();
-			System.err.println("Request Config is null: " + (requestConfig == null));
-			System.err.println("Trigger Config is null: " + (triggerConfig == null));
-			System.err.println("Request Config = Trigger Config: " + (requestConfig == triggerConfig));
-			System.err.println("Request Config equals Trigger Config: " + (requestConfig.equals(triggerConfig)));
+			logger.debug("Request Config is null: {}", (requestConfig == null));
+			logger.debug("Trigger Config is null: {}", (triggerConfig == null));
+			logger.debug("Request Config = Trigger Config: {}", (requestConfig == triggerConfig));
+			logger.debug("Request Config equals Trigger Config: {}", (requestConfig.equals(triggerConfig)));
 			Properties config = trigger.getProperties();
 			
 			installer.saveConfiguration(trigger.getClass(), config);
@@ -153,7 +158,7 @@ public class TriggerManagerImpl implements TriggerManagerMXBean {
 	
 	@Override
 	public void updateTriggerConfig(String triggerId, Set<SimpleKeyValue> properties) throws SmartTriggerException {
-		properties.forEach(p -> System.out.println("Prop: " + p.getKey() + ": val " + p.getValue()));
+		properties.forEach(p -> logger.debug("Prop: {} - val: {}", p.getKey(), p.getValue()));
 		SmartTriggerApp app = SmartTriggerApp.getApp();
 		SmartTrigger trigger = app.removeTrigger(triggerId);
 		properties.forEach(p -> trigger.updateProperty(p.getKey(), p.getValue()));
@@ -186,7 +191,6 @@ public class TriggerManagerImpl implements TriggerManagerMXBean {
 	
 	private void handleException(Exception e) {
 		// TODO: handle this
-		System.err.println(e.getMessage());
-		e.printStackTrace();
+		logger.error(e.getMessage(), e);
 	}
 }

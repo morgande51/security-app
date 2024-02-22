@@ -15,6 +15,9 @@ import java.util.concurrent.TimeUnit;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.nge.smarttrigger.manager.TriggerInstaller;
 import com.nge.smarttrigger.manager.TriggerManagerImpl;
 import com.nge.smarttrigger.spi.InitRequest;
@@ -23,6 +26,8 @@ import com.nge.smarttrigger.spi.SmartTriggerException;
 import com.nge.smarttrigger.spi.SmartTriggerStateType;
 
 public class SmartTriggerApp implements Runnable {
+	
+	private static final Logger logger = LoggerFactory.getLogger(SmartTriggerApp.class);
 	
 	public static final String JMX_OBJECT_NAME = "com.dme:type=SmartTrigger,name=TriggerManager";
 	
@@ -52,7 +57,7 @@ public class SmartTriggerApp implements Runnable {
 		// Load the map with all the triggers
 		ServiceLoader<SmartTrigger> triggerLoader =  ServiceLoader.load(SmartTrigger.class);
 		if (triggerLoader.findFirst().isEmpty()) {
-			System.err.println("No known triggers");
+			logger.warn("No triggers detected");
 		}
 		triggers = new ConcurrentHashMap<>();
 		//triggerLoader.forEach((t) -> triggers.put(t.getId(), t));
@@ -84,7 +89,7 @@ public class SmartTriggerApp implements Runnable {
 				triggerInfo = ti.getTriggerInfo(triggerClass);
 			}
 			catch (IOException e) {
-				System.err.println("Are we in DEV mode: " + devMode);
+				logger.debug("DEV mode: {}", devMode);
 				if (devMode) {
 					ClassLoader cl = ClassLoader.getSystemClassLoader();
 					String fileName = ti.getTriggerInfoFileName(triggerClass);
@@ -93,15 +98,13 @@ public class SmartTriggerApp implements Runnable {
 						triggerInfo = ti.getTriggerInfo(stream);
 					}
 					catch (IOException ioe) {
-						System.err.println("no trigger info: " + fileName);
+						logger.error("no trigger info: {}", fileName);
 						return;
 					}
 				}
 				else {
 					// trigger info cannot be found for trigger
-					// TODO: log this
-					System.err.append("no config for this trigger: " + t.getId());
-					e.printStackTrace();
+					logger.error("no config for this trigger: {}", t.getId());
 					return;
 				}
 			}
@@ -184,7 +187,7 @@ public class SmartTriggerApp implements Runnable {
 	private Runnable asRunnable(SmartTrigger trigger) {
 		Runnable r = () -> {
 			SmartTriggerStateType state = trigger.getState();
-			System.out.println("Trigger State: " + state);
+			logger.debug("Trigger State: " + state);
 			try {
 //				while (state != SmartTriggerStateType.REMOVED) {
 				while (trigger.shouldRun()) {
@@ -200,7 +203,7 @@ public class SmartTriggerApp implements Runnable {
 					
 					Thread.sleep(trigger.getFireInterval());
 				}
-				System.out.println("Trigger[" + trigger.getId() + "] has stopped");
+				logger.warn("Trigger[{}] has stopped.", trigger.getId());
 			}
 			catch (InterruptedException e) {
 				// TODO: handle this
