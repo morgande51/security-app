@@ -35,7 +35,7 @@ public abstract class AbstractTrigger implements SmartTrigger {
 		}
 		else if (configuration.isEmpty()) {
 			initalState = OFFLINE;
-			initConfiguration(configuration);
+			declareConfiguration(configuration);
 		}
 		else {
 			initalState = init(configuration);
@@ -134,7 +134,7 @@ public abstract class AbstractTrigger implements SmartTrigger {
 		this.runtimeExcpetion = e;
 	}
 	
-	protected void initConfiguration(Properties config) {}
+	protected void declareConfiguration(Properties config) {}
 	
 	protected SmartTriggerStateType init(Properties config) {
 		return RUNNING;

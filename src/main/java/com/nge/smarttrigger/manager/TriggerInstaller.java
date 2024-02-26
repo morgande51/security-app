@@ -92,7 +92,7 @@ public class TriggerInstaller {
 		
 		// load the new trigger from the fileSystem
 		JarLoader.addToClassPath(libJarPath.toFile());
-		Class<SmartTrigger> triggerClass = (Class<SmartTrigger>) getClassFor(triggerFQN);
+		Class<SmartTrigger> triggerClass = (Class<SmartTrigger>) getClassFor(libJarPath, triggerFQN);
 		SmartTrigger trigger;
 		try {
 			trigger = triggerClass.getDeclaredConstructor().newInstance();
@@ -175,14 +175,15 @@ public class TriggerInstaller {
 		return new Properties();
 	}
 	
-	private Class<?> getClassFor(String triggerClassName) {
-//		ClassLoader cl = Thread.currentThread().getContextClassLoader();
-		ClassLoader cl = ClassLoader.getSystemClassLoader();
+	private Class<?> getClassFor(Path jarFilePath, String triggerClassName) {
+		ClassLoader parent = Thread.currentThread().getContextClassLoader();
+		TriggerClassLoader cl = new TriggerClassLoader(parent);
 		Class<?> triggerClass;
 		try {
-			triggerClass = cl.loadClass(triggerClassName);
+			JarFile jf = new JarFile(jarFilePath.toFile());
+			triggerClass = cl.loadTrigger(jf, triggerClassName);
 		}
-		catch (ClassNotFoundException e) {
+		catch (ClassNotFoundException | IOException e) {
 			throw new RuntimeException(e);
 		}
 		return triggerClass;
